@@ -27,12 +27,9 @@ public void OnPluginStart()
   {
     hasAdrenaline[i]=false;
   }
-  PrintToServer("[l4d2 WAB]STARTING... DONE");
-  PrintToConsoleAll("[l4d2 WAB]STARTING... DONE");
+  PrintToServer("[l4d2 WAB]starting...");
   HookEvent("adrenaline_used",Event_Adrenaline_Used2);
   HookEvent("infected_hurt", Event_Infected_Hurt2);
-	
-	//HookAll();
 }
 
 
@@ -41,30 +38,22 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   //get client index
   int attackerInt=GetEventInt(event,"attacker");
   int attacker_client=GetClientOfUserId(attackerInt);
-  if(IsFakeClient(attacker_client)){return;}
+  if(IsFakeClient(attacker_client)){return;}//bots can't take advantage of this
   int victim=GetEventInt(event,"entityid");
-  PrintToServer("Infected Hurt: %d",victim);
-  PrintToConsoleAll("Infected Hurt: %d",victim);
-  PrintToServer("[l4d2 WAB]attackerInt: %d",attackerInt);
-  PrintToServer("[l4d2 WAB]attacker_client: %d",attacker_client);
   char clientName[32];
   if(GetClientName(attacker_client,clientName,sizeof(clientName)))
   {
     PrintToServer("[l4d2 WAB]attacker: %s",clientName);
-    PrintToConsoleAll("[l4d2 WAB]attacker: %s",clientName);
   }
   else
   {
     PrintToServer("[l4d2 WAB]failed to retrieve client name of client: %d",attacker_client);
-    PrintToConsoleAll("[l4d2 WAB]failed to retrieve client name of client: %d",attacker_client);
   }
   //is adrenaline active?
   //if(!GetEntProp(attacker_client, Prop_Send, "m_bAdrenalineActive", 1))
   //if(hasAdrenaline[attacker_client])
-  if(hasAdrenaline[attackerInt])//i dont understand the difference between this and the client id /shrug
+  if(hasAdrenaline[attackerInt])
   {
-    PrintToServer("[l4d2 WAB]adrenaline is active!!!!!!!!!!!!!!!!!!");
-    PrintToConsoleAll("[l4d2 WAB]adrenaline is active!");
     //get weapon type
     if( attacker_client && IsClientInGame(attacker_client) && IsPlayerAlive(attacker_client) && GetClientTeam(attacker_client) == 2 )
     {
@@ -74,8 +63,6 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
         char weaponName[32];
         if(GetEntityClassname(weapon, weaponName, sizeof(weaponName)))
         {
-          PrintToServer("[l4d2 WAB]weapon name: %s",weaponName);
-          PrintToConsoleAll("[l4d2 WAB]weapon name: %s",weaponName);
           //is this a melee weapon?
           if(strcmp(weaponName,"weapon_melee")==0)
           {
@@ -83,8 +70,6 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
             {// is the enemy a witch?
               if(strcmp(weaponName,"witch")==0)
               {
-                PrintToServer("[l4d2 WAB]KILLING WITCH: %s",weaponName);
-                PrintToConsoleAll("[l4d2 WAB]KILLING WITCH: %s",weaponName);
 
                 AcceptEntityInput(victim,"Kill");
                 //SetEntityHealth(victim,0);
@@ -94,7 +79,6 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
             else
             {
               PrintToServer("[l4d2 WAB]failed to retrieve class name of infected: %d",attacker_client);
-              PrintToConsoleAll("[l4d2 WAB]failed to retrieve class name of infected: %d",attacker_client);
             }
             
           }
@@ -102,32 +86,28 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
         else
         {
           PrintToServer("[l4d2 WAB]failed to retrieve weapon name of client: %d",attacker_client);
-          PrintToConsoleAll("[l4d2 WAB]failed to retrieve weapon name of client: %d",attacker_client);
         }
       }
       else
       {
         PrintToServer("[l4d2 WAB]invalid weapon");
-        PrintToConsoleAll("[l4d2 WAB]invalid weapon");
       }
     }
     hasAdrenaline[attacker_client]=false;
     PrintToServer("[l4d2 WAB]DEACTIVATED BOOST");
-    PrintToConsoleAll("[l4d2 WAB]DEACTIVATED BOOST");
   }
   else
   {
     PrintToServer("[l4d2 WAB]adrenaline is not present");
-    PrintToConsoleAll("[l4d2 WAB]adrenaline is not present");
   }
-
-  //return Plugin_Handled;
 }
 
 public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroadcast)
 {
   int aIndex=GetEventInt(event,"userid");
-  PrintToServer("[l4d2 WAB]client used adrenaline: %d",aIndex);
+  char clientName[32];
+  GetClientName(aIndex,clientName,sizeof(clientName));
+  PrintToServer("[l4d2 WAB]adrenaline boost activated for: %s",clientName);
   hasAdrenaline[aIndex]=true;
   CreateTimer(10.0,disableAdrenalineBoost,GetClientSerial(aIndex));
 }
@@ -135,7 +115,9 @@ public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroa
 public Action disableAdrenalineBoost(Handle timer,any serial)
 {
   int this_client=GetClientFromSerial(serial);
-  PrintToServer("[l4d2 WAB]adrenaline timer ran out for client: %d",this_client);
+  char clientName[32];
+  GetClientName(this_client,clientName,sizeof(this_client));
+  PrintToServer("[l4d2 WAB]adrenaline boost deactivated: %d",this_client);
   if(this_client==0)
   {
     return Plugin_Stop;

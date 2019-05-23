@@ -65,6 +65,52 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   {
     PrintToServer("[l4d2 WAB]adrenaline is active!!!!!!!!!!!!!!!!!!");
     PrintToConsoleAll("[l4d2 WAB]adrenaline is active!");
+    //get weapon type
+    if( attacker_client && IsClientInGame(attacker_client) && IsPlayerAlive(attacker_client) && GetClientTeam(attacker_client) == 2 )
+    {
+      int weapon = GetEntPropEnt(attacker_client, Prop_Send, "m_hActiveWeapon");
+      if( weapon > 0 && IsValidEntity(weapon) )
+      {
+        char weaponName[32];
+        if(GetEntityClassname(weapon, weaponName, sizeof(weaponName)))
+        {
+          PrintToServer("[l4d2 WAB]weapon name: %s",weaponName);
+          PrintToConsoleAll("[l4d2 WAB]weapon name: %s",weaponName);
+          //is this a melee weapon?
+          if(strcmp(weaponName,"weapon_melee")==0)
+          {
+            if(GetEntityClassname(victim,weaponName,sizeof(weaponName)))
+            {// is the enemy a witch?
+              if(strcmp(weaponName,"witch")==0)
+              {
+                PrintToServer("[l4d2 WAB]KILLING WITCH: %s",weaponName);
+                PrintToConsoleAll("[l4d2 WAB]KILLING WITCH: %s",weaponName);
+
+                AcceptEntityInput(victim,"Kill");
+                //SetEntityHealth(victim,0);
+
+              }
+            }
+            else
+            {
+              PrintToServer("[l4d2 WAB]failed to retrieve class name of infected: %d",attacker_client);
+              PrintToConsoleAll("[l4d2 WAB]failed to retrieve class name of infected: %d",attacker_client);
+            }
+            
+          }
+        }
+        else
+        {
+          PrintToServer("[l4d2 WAB]failed to retrieve weapon name of client: %d",attacker_client);
+          PrintToConsoleAll("[l4d2 WAB]failed to retrieve weapon name of client: %d",attacker_client);
+        }
+      }
+      else
+      {
+        PrintToServer("[l4d2 WAB]invalid weapon");
+        PrintToConsoleAll("[l4d2 WAB]invalid weapon");
+      }
+    }
     hasAdrenaline[attacker_client]=false;
     PrintToServer("[l4d2 WAB]DEACTIVATED BOOST");
     PrintToConsoleAll("[l4d2 WAB]DEACTIVATED BOOST");
@@ -75,30 +121,6 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
     PrintToConsoleAll("[l4d2 WAB]adrenaline is not present");
   }
 
-  //get weapon type
-  if( attacker_client && IsClientInGame(attacker_client) && IsPlayerAlive(attacker_client) && GetClientTeam(attacker_client) == 2 )
-  {
-    int weapon = GetEntPropEnt(attacker_client, Prop_Send, "m_hActiveWeapon");
-    if( weapon > 0 && IsValidEntity(weapon) )
-    {
-      char weaponName[32];
-      if(GetEntityClassname(weapon, weaponName, sizeof(weaponName)))
-      {
-        PrintToServer("[l4d2 WAB]weapon name: %s",weaponName);
-        PrintToConsoleAll("[l4d2 WAB]weapon name: %s",weaponName);
-      }
-      else
-      {
-        PrintToServer("[l4d2 WAB]failed to retrieve weapon name of client: %d",attacker_client);
-        PrintToConsoleAll("[l4d2 WAB]failed to retrieve weapon name of client: %d",attacker_client);
-      }
-    }
-    else
-    {
-      PrintToServer("[l4d2 WAB]invalid weapon");
-      PrintToConsoleAll("[l4d2 WAB]invalid weapon");
-    }
-  }
   //return Plugin_Handled;
 }
 

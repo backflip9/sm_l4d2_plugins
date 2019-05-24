@@ -18,11 +18,12 @@ public Plugin myinfo =
 };
 
 static bool hasAdrenaline[MAXPLAYERS+1];
-
+static char prepend[32];
 public void OnPluginStart()
 {
 	//CreateConVar("l4d2_witch_adrenaline_boost_version", PLUGIN_VERSION, "[L4D2]Witch_Adrenaline_Boost", FCVAR_DONTRECORD|FCVAR_NOTIFY);
-	
+  prepend="[SM_WAB]";
+
   for(int i=0;i<MAXPLAYERS+1;i++)
   {
     hasAdrenaline[i]=false;
@@ -30,6 +31,7 @@ public void OnPluginStart()
   PrintToServer("[l4d2 WAB]starting...");
   HookEvent("adrenaline_used",Event_Adrenaline_Used2);
   HookEvent("infected_hurt", Event_Infected_Hurt2);
+  HookEvent("witch_spawn",Event_Witch_Spawn2);
 }
 
 
@@ -100,6 +102,34 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   {
     PrintToServer("[l4d2 WAB]adrenaline is not present");
   }
+}
+
+public Action Event_Witch_Spawn2(Handle event,const char[] name, bool dontBroadcast)
+{
+  int this_witch=GetEventInt(event,"witchid");
+  PrintToServer("spawned witch: %d",prepend,this_witch);
+  if(this_witch < 1 || !IsValidEntity(this_witch)){return;}
+  SDKHook(this_witch,SDKHook_OnTakeDamage,handleWitchDamage);
+}
+
+public Action handleWitchDamage(int victim,int& attacker,int& inflictor,float& damage,int& damagetype)
+{
+  PrintToServer("%sattacker: %d",prepend,attacker);
+  PrintToServer("%sinflictor: %d",prepend,inflictor);
+  PrintToServer("%svictim: %d",prepend,victim);
+  char attackerName[32];
+  GetClientName(attacker,attackerName,sizeof(attackerName));
+  PrintToServer("%sattacker name: %s",prepend,attackerName);
+  GetEntityClassname(attacker,attackerName,sizeof(attackerName));
+  PrintToServer("%sattacker classname: %s",prepend,attackerName);
+  char inflictorName[32];
+  GetClientName(inflictor, inflictorName, sizeof(inflictorName));
+  PrintToServer("%sinflictor name: %s",prepend,inflictorName);
+  GetEntityClassname(inflictor, inflictorName, sizeof(inflictorName));
+  PrintToServer("%sinflictor classname: %s",prepend,inflictorName);
+  char victimName[32];
+  GetEntityClassname(victim, victimName, sizeof(victimName));
+  PrintToServer("%svictim classname: %s",prepend,victimName);
 }
 
 public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroadcast)

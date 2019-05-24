@@ -33,6 +33,7 @@ public void OnPluginStart()
 }
 
 
+
 public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadcast)
 {
   //get client index
@@ -72,6 +73,8 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
               {
 
                 AcceptEntityInput(victim,"Kill");
+                hasAdrenaline[attacker_client]=false;
+                PrintToServer("[l4d2 WAB]DEACTIVATED BOOST");
                 //SetEntityHealth(victim,0);
 
               }
@@ -93,8 +96,6 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
         PrintToServer("[l4d2 WAB]invalid weapon");
       }
     }
-    hasAdrenaline[attacker_client]=false;
-    PrintToServer("[l4d2 WAB]DEACTIVATED BOOST");
   }
   else
   {

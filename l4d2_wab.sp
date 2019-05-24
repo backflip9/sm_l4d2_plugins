@@ -36,12 +36,20 @@ public void OnPluginStart()
 
 public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadcast)
 {
+  char nameBuf[32];
+  if(GetEntityClassname(victim,nameBuf,sizeof(nameBuf)))
+  {// is the enemy a witch?
+    if(strcmp(nameBuf,"witch")!=0){return;}//not a witch, we don't care what happens
+  }
+  else
+  {
+    PrintToServer("[l4d2 WAB]failed to retrieve class name of infected: %d",attacker_client);
+  }
   //get client index
   int attackerInt=GetEventInt(event,"attacker");
   int attacker_client=GetClientOfUserId(attackerInt);
   if(IsFakeClient(attacker_client)){return;}//bots can't take advantage of this
   int victim=GetEventInt(event,"entityid");
-  char clientName[32];
   if(GetClientName(attacker_client,clientName,sizeof(clientName)))
   {
     PrintToServer("[l4d2 WAB]attacker: %s",clientName);
@@ -67,23 +75,9 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
           //is this a melee weapon?
           if(strcmp(weaponName,"weapon_melee")==0)
           {
-            if(GetEntityClassname(victim,weaponName,sizeof(weaponName)))
-            {// is the enemy a witch?
-              if(strcmp(weaponName,"witch")==0)
-              {
-
-                AcceptEntityInput(victim,"Kill");
-                hasAdrenaline[attacker_client]=false;
-                PrintToServer("[l4d2 WAB]DEACTIVATED BOOST");
-                //SetEntityHealth(victim,0);
-
-              }
-            }
-            else
-            {
-              PrintToServer("[l4d2 WAB]failed to retrieve class name of infected: %d",attacker_client);
-            }
-            
+            AcceptEntityInput(victim,"Kill");
+            hasAdrenaline[attacker_client]=false;
+            PrintToServer("[l4d2 WAB]DEACTIVATED BOOST");
           }
         }
         else

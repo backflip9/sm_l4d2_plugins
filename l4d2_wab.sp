@@ -49,8 +49,11 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
     PrintToServer("%sfailed to retrieve class name of infected: %d",prepend,victim);
   }
   //get client index
+  /*
   int attackerInt=GetEventInt(event,"attacker");
   int attacker_client=GetClientOfUserId(attackerInt);
+  */
+  int attacker_client=GetClientOfUserId(GetEventInt(event,"attacker"));//client index of the attacker
   if(IsFakeClient(attacker_client)){return;}//bots can't take advantage of this
   PrintToServer("%sN attacker: %N",prepend,attacker_client);
   if(IsClientInGame(attacker_client) && GetClientName(attacker_client,nameBuf,sizeof(nameBuf)))
@@ -64,7 +67,7 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   //is adrenaline active?
   //if(!GetEntProp(attacker_client, Prop_Send, "m_bAdrenalineActive", 1))
   //if(hasAdrenaline[attacker_client])
-  if(hasAdrenaline[attackerInt])
+  if(hasAdrenaline[attacker_client])
   {
     //get weapon type
     if( attacker_client && IsClientInGame(attacker_client) && IsPlayerAlive(attacker_client) && GetClientTeam(attacker_client) == 2 )
@@ -108,6 +111,16 @@ public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroa
   PrintToServer("%sadrenaline boost activated for: %s",prepend,clientName);
   hasAdrenaline[aIndex]=true;
   CreateTimer(10.0,disableAdrenalineBoost,GetClientSerial(aIndex));
+}
+
+public void OnClientPutInServer(int clientIndex)
+{
+  hasAdrenaline[clientIndex]=false;
+}
+
+public void OnClientDisconnect(int clientIndex)
+{
+  hasAdrenaline[clientIndex]=false;
 }
 
 public Action disableAdrenalineBoost(Handle timer,any serial)

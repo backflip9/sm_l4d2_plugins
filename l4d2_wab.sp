@@ -127,7 +127,11 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
 {
   int this_client=GetClientFromSerial(serial);
   char clientName[32];
-  GetClientName(this_client,clientName,sizeof(this_client));
+  if(!IsClientInGame(this_client) || !GetClientName(this_client,clientName,sizeof(this_client)))
+  {
+    PrintToServer("%sfailed to retrieve client name for ID: %d",prepend,this_client);
+    return Plugin_Stop;
+  }
   PrintToServer("%sadrenaline boost deactivated: %d",prepend,this_client);
   if(this_client==0)
   {
@@ -136,3 +140,4 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
   hasAdrenaline[this_client]=false;
   return Plugin_Handled;
 }
+

@@ -105,9 +105,10 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
 
 public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroadcast)
 {
-  int aIndex=GetEventInt(event,"userid");
+  int aIndex=GetClientOfUserId(GetEventInt(event,"userid"));
   char clientName[32];
   GetClientName(aIndex,clientName,sizeof(clientName));
+  PrintToChat(aIndex,"%sYour adrenaline boost has been deactivated!",prepend);
   PrintToServer("%sadrenaline boost activated for: %s",prepend,clientName);
   hasAdrenaline[aIndex]=true;
   CreateTimer(10.0,disableAdrenalineBoost,GetClientSerial(aIndex));
@@ -132,6 +133,7 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
     PrintToServer("%sfailed to retrieve client name for ID: %d",prepend,this_client);
     return Plugin_Stop;
   }
+  PrintToChat(this_client,"%sYour adrenaline boost has been deactivated!",prepend);
   PrintToServer("%sadrenaline boost deactivated: %d",prepend,this_client);
   if(this_client==0)
   {

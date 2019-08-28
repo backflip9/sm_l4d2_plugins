@@ -7,6 +7,7 @@
 #pragma newdecls required
 
 #define PLUGIN_VERSION "0.0"
+#define DEBUG
 
 public Plugin myinfo =
 {
@@ -18,7 +19,9 @@ public Plugin myinfo =
 };
 
 static bool hasAdrenaline[MAXPLAYERS+1];
+#if defined DEBUG
 static char prepend[32];
+#endif
 
 public void OnPluginStart()
 {
@@ -28,8 +31,10 @@ public void OnPluginStart()
   {
     hasAdrenaline[i]=false;
   }
+  #if defined DEBUG
   prepend="[SM_WAB]";
   PrintToServer("%sstarting...",prepend);
+  #endif
   HookEvent("adrenaline_used",Event_Adrenaline_Used2);
   HookEvent("infected_hurt", Event_Infected_Hurt2);
 }
@@ -44,10 +49,12 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   {// is the enemy a witch?
     if(strcmp(nameBuf,"witch")!=0){return;}//not a witch, we don't care what happens
   }
+  #if defined DEBUG
   else
   {
     PrintToServer("%sfailed to retrieve class name of infected: %d",prepend,victim);
   }
+  #endif
   //get client index
   /*
   int attackerInt=GetEventInt(event,"attacker");
@@ -55,7 +62,8 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   */
   int attacker_client=GetClientOfUserId(GetEventInt(event,"attacker"));//client index of the attacker
   if(IsFakeClient(attacker_client)){return;}//bots can't take advantage of this
-  PrintToServer("%sN attacker: %N",prepend,attacker_client);
+  #if defined DEBUG
+  PrintToServer("%sattacker: %N",prepend,attacker_client);
   if(IsClientInGame(attacker_client) && GetClientName(attacker_client,nameBuf,sizeof(nameBuf)))
   {
     PrintToServer("%sattacker: %s",prepend,nameBuf);
@@ -64,6 +72,7 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   {
     PrintToServer("%sfailed to retrieve client name of client: %d",prepend,attacker_client);
   }
+  #endif
   //is adrenaline active?
   //if(!GetEntProp(attacker_client, Prop_Send, "m_bAdrenalineActive", 1))
   //if(hasAdrenaline[attacker_client])
@@ -81,26 +90,45 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
           //is this a melee weapon?
           if(strcmp(weaponName,"weapon_melee")==0)
           {
-            AcceptEntityInput(victim,"Kill");
+            //old method:
+            //AcceptEntityInput(victim,"Kill");
+            int damageType=GetEventInt(event,"type");
+            #if defined DEBUG
+            PrintToServer("%sdamageType: %d",prepend,damageType);
+            #endif
+            float damageVec[3]= {0.0,0.0,0.0};
+            float witchPosition[3]={0.0,0.0,0.0};
+            //GetEntPropVector(victim,Prop_Send,"m_vecOrigin",witchPosition);
+            //SDKHooks_TakeDamage(victim,weapon,attacker_client,999999,damageType,weapon,damageVec,witchPosition);
+            //SDKHooks_TakeDamage(victim,weapon,attacker_client,999999,DMG_SLASH,weapon,damageVec,witchPosition);
+            SDKHooks_TakeDamage(victim,attacker_client,attacker_client,999999.0,DMG_SLASH,weapon,damageVec,witchPosition);
             hasAdrenaline[attacker_client]=false;
+            #if defined DEBUG
             PrintToServer("%sDEACTIVATED BOOST",prepend);
+            #endif
           }
         }
+        #if defined DEBUG
         else
         {
           PrintToServer("%sfailed to retrieve weapon name of client: %d",prepend,attacker_client);
         }
+        #endif
       }
+      #if defined DEBUG
       else
       {
         PrintToServer("%sinvalid weapon",prepend);
       }
+      #endif
     }
   }
+  #if defined DEBUG
   else
   {
     PrintToServer("%sadrenaline is not present",prepend);
   }
+  #endif
 }
 
 public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroadcast)
@@ -128,18 +156,27 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
 {
   int this_client=GetClientFromSerial(serial);
   char clientName[32];
+
   if(!IsClientInGame(this_client) || !GetClientName(this_client,clientName,sizeof(this_client)))
   {
+    #if defined DEBUG
     PrintToServer("%sfailed to retrieve client name for ID: %d",prepend,this_client);
+    #endif
     return Plugin_Stop;
   }
-  PrintToChat(this_client,"%sYour adrenaline boost has been deactivated!",prepend);
+  //the client may have had their adrenaline deactivated already by actually slashing at the witch
+  if(hasAdrenaline[this_client])
+  {
+    hasAdrenaline[this_client]=false;
+    PrintToChat(this_client,"%sYour adrenaline boost has been deactivated!",prepend);
+  }
+  #if defined DEBUG
   PrintToServer("%sadrenaline boost deactivated: %d",prepend,this_client);
+  #endif
   if(this_client==0)
   {
     return Plugin_Stop;
   }
-  hasAdrenaline[this_client]=false;
   return Plugin_Handled;
 }
 

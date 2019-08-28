@@ -90,17 +90,12 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
           //is this a melee weapon?
           if(strcmp(weaponName,"weapon_melee")==0)
           {
-            //old method:
-            //AcceptEntityInput(victim,"Kill");
             int damageType=GetEventInt(event,"type");
             #if defined DEBUG
             PrintToServer("%sdamageType: %d",prepend,damageType);
             #endif
             float damageVec[3]= {0.0,0.0,0.0};
             float witchPosition[3]={0.0,0.0,0.0};
-            //GetEntPropVector(victim,Prop_Send,"m_vecOrigin",witchPosition);
-            //SDKHooks_TakeDamage(victim,weapon,attacker_client,999999,damageType,weapon,damageVec,witchPosition);
-            //SDKHooks_TakeDamage(victim,weapon,attacker_client,999999,DMG_SLASH,weapon,damageVec,witchPosition);
             SDKHooks_TakeDamage(victim,attacker_client,attacker_client,999999.0,DMG_SLASH,weapon,damageVec,witchPosition);
             hasAdrenaline[attacker_client]=false;
             #if defined DEBUG

@@ -19,13 +19,16 @@ public Plugin myinfo =
 };
 
 static bool hasAdrenaline[MAXPLAYERS+1];
-#if defined DEBUG
 static char prepend[32];
-#endif
+static float cooldown_time;
 
 public void OnPluginStart()
 {
+  cooldown_time=10.0;
 	//CreateConVar("l4d2_witch_adrenaline_boost_version", PLUGIN_VERSION, "[L4D2]Witch_Adrenaline_Boost", FCVAR_DONTRECORD|FCVAR_NOTIFY);
+  CreateConVar("l4d_wab_cooldown","10","Amount of time the witch adrenaline boost is active after using adrenaline",FCVAR_NOTIFY,true/*hasmin*/,1.0,true/*hasmax*/,3600.00);
+  ConVar cooldown_convar=FindConVar("l4d_wab_cooldown");
+  HookConVarChange(cooldown_convar,on_cooldown_change);
 	
   for(int i=0;i<MAXPLAYERS+1;i++)
   {
@@ -35,13 +38,25 @@ public void OnPluginStart()
   prepend="[SM_WAB]";
   PrintToServer("%sstarting...",prepend);
   #endif
-  HookEvent("adrenaline_used",Event_Adrenaline_Used2);
-  HookEvent("infected_hurt", Event_Infected_Hurt2);
+  HookEvent("adrenaline_used",shoot_adrenaline);
+  HookEvent("infected_hurt", hurt_zombie);
 }
 
+public void on_cooldown_change(Handle convar,const char[] oldValue,const char[] newValue)
+{
+  float new_cooldown=StringToFloat(newValue);
+  if(new_cooldown>0 && new_cooldown < 3600)
+  {
+    cooldown_time=new_cooldown;
+    PrintToServer("%scooldown_time changed to: %f",prepend,cooldown_time);
+  }
+  else
+  {
+    PrintToServer("%sInvalid input <%s> must be a positive integer below 3600: %f\n",prepend,newValue,new_cooldown);
+  }
+}
 
-
-public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadcast)
+public void hurt_zombie(Handle event,const char[] name, bool dontBroadcast)
 {
   char nameBuf[32];
   int victim=GetEventInt(event,"entityid");
@@ -126,15 +141,15 @@ public void Event_Infected_Hurt2(Handle event,const char[] name, bool dontBroadc
   #endif
 }
 
-public void Event_Adrenaline_Used2(Handle event,const char[] name, bool dontBroadcast)
+public void shoot_adrenaline(Handle event,const char[] name, bool dontBroadcast)
 {
   int aIndex=GetClientOfUserId(GetEventInt(event,"userid"));
   char clientName[32];
   GetClientName(aIndex,clientName,sizeof(clientName));
-  PrintToChat(aIndex,"%sYour adrenaline boost has been deactivated!",prepend);
+  PrintToChat(aIndex,"%sYour adrenaline boost has been activated!",prepend);
   PrintToServer("%sadrenaline boost activated for: %s",prepend,clientName);
   hasAdrenaline[aIndex]=true;
-  CreateTimer(10.0,disableAdrenalineBoost,GetClientSerial(aIndex));
+  CreateTimer(cooldown_time,disableAdrenalineBoost,GetClientSerial(aIndex));
 }
 
 public void OnClientPutInServer(int clientIndex)

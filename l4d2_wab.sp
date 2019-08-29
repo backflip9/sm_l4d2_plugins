@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "0.2"
+#define PLUGIN_VERSION "0.3"
 #define DEBUG
 
 public Plugin myinfo =

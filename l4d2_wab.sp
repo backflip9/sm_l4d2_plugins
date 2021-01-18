@@ -18,6 +18,7 @@
 #define PREPEND "[SM_WAB]"
 
 #define WABPrintToServer(%1) PrintToServer(PREPEND ... %1)
+#define WABPrintToServerDebug(%1) DBG_PRINT PrintToServer(PREPEND ... %1)
 
 public Plugin myinfo =
 {
@@ -45,7 +46,7 @@ public void OnPluginStart()
     hasAdrenaline[i]=false;
   }
   prepend="[SM_WAB]";
-  DBG_PRINT WABPrintToServer("starting...");
+  WABPrintToServerDebug("starting...");
   HookEvent("adrenaline_used", shoot_adrenaline);
   HookEvent("infected_hurt", hurt_zombie);
 }
@@ -74,7 +75,7 @@ public void hurt_zombie(Handle event,const char[] name, bool dontBroadcast)
   }
   else
   {
-    DBG_PRINT WABPrintToServer("failed to retrieve class name of infected: %d", victim);
+    WABPrintToServerDebug("failed to retrieve class name of infected: %d", victim);
   }
   //get client index
   /*
@@ -112,29 +113,29 @@ public void hurt_zombie(Handle event,const char[] name, bool dontBroadcast)
           if(strcmp(weaponName,"weapon_melee")==0)
           {
             int damageType=GetEventInt(event,"type");
-            DBG_PRINT WABPrintToServer("damageType: %d", damageType);
+            WABPrintToServerDebug("damageType: %d", damageType);
             float damageVec[3]= {0.0,0.0,0.0};
             float witchPosition[3]={0.0,0.0,0.0};
             //if (
             SDKHooks_TakeDamage(victim,attacker_client,attacker_client,999999.0,DMG_SLASH,weapon,damageVec,witchPosition);
             hasAdrenaline[attacker_client]=false;
-            DBG_PRINT WABPrintToServer("DEACTIVATED BOOST");
+            WABPrintToServerDebug("DEACTIVATED BOOST");
           }
         }
         else
         {
-          DBG_PRINT WABPrintToServer("failed to retrieve weapon name of client: %d", attacker_client);
+          WABPrintToServerDebug("failed to retrieve weapon name of client: %d", attacker_client);
         }
       }
       else
       {
-        DBG_PRINT WABPrintToServer("invalid weapon");
+        WABPrintToServerDebug("invalid weapon");
       }
     }
   }
   else
   {
-    DBG_PRINT WABPrintToServer("adrenaline is not present");
+    WABPrintToServerDebug("adrenaline is not present");
   }
 }
 
@@ -166,7 +167,7 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
 
   if(!IsClientInGame(this_client) || !GetClientName(this_client,clientName,sizeof(this_client)))
   {
-    DBG_PRINT WABPrintToServer("failed to retrieve client name for ID: %d", this_client);
+    WABPrintToServerDebug("failed to retrieve client name for ID: %d", this_client);
     return Plugin_Stop;
   }
   //the client may have had their adrenaline deactivated already by actually slashing at the witch
@@ -175,7 +176,7 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
     hasAdrenaline[this_client]=false;
     PrintToChat(this_client,"%sYour adrenaline boost has been deactivated!",prepend);
   }
-  DBG_PRINT WABPrintToServer("adrenaline boost deactivated: %d", this_client);
+  WABPrintToServerDebug("adrenaline boost deactivated: %d", this_client);
   if(this_client==0)
   {
     return Plugin_Stop;

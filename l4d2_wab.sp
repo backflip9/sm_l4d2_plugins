@@ -10,15 +10,17 @@
 #define DEBUG
 
 #if defined DEBUG
-#define DBG_PRINT if (true)
+#define IF_DEBUG if (true)
 #else
-#define DBG_PRINT if (false)
+#define IF_DEBUG if (false)
 #endif
 
-#define PREPEND "[SM_WAB]"
+#define PREPEND "[SM_WAB] "
+#define COOLDOWN_CONVAR "l4d_wab_cooldown"
+#define STAGGER_CONVAR "l4d_wab_stagger"
 
 #define WABPrintToServer(%1) PrintToServer(PREPEND ... %1)
-#define WABPrintToServerDebug(%1) DBG_PRINT PrintToServer(PREPEND ... %1)
+#define WABPrintToServerDebug(%1) IF_DEBUG WABPrintToServer(%1)
 
 public Plugin myinfo =
 {
@@ -37,10 +39,11 @@ public void OnPluginStart()
 {
   cooldown_time=10.0;
 	//CreateConVar("l4d2_witch_adrenaline_boost_version", PLUGIN_VERSION, "[L4D2]Witch_Adrenaline_Boost", FCVAR_DONTRECORD|FCVAR_NOTIFY);
-  ConVar cooldown_convar = CreateConVar("l4d_wab_cooldown", "10", "Amount of time the witch adrenaline boost is active after using adrenaline", FCVAR_NOTIFY, true/*hasmin*/, 1.0, true/*hasmax*/, 3600.00);
+  ConVar cooldown_convar = CreateConVar(COOLDOWN_CONVAR, "10", "Amount of time the witch adrenaline boost is active after using adrenaline", FCVAR_NOTIFY, true/*hasmin*/, 1.0, true/*hasmax*/, 3600.00);
+  ConVar stagger_convar = CreateConVar(STAGGER_CONVAR, "false", "Set to true to cause the witch to stagger rather than instakill when hit with a melee weapon while the boost is active", FCVAR_NOTIFY);
   //ConVar cooldown_convar=FindConVar("l4d_wab_cooldown");
-  HookConVarChange(cooldown_convar,on_cooldown_change);
-	
+  HookConVarChange(cooldown_convar, on_cooldown_change);
+  HookConVarChange(stagger_convar, on_stagger_change);
   for(int i=0;i<MAXPLAYERS+1;i++)
   {
     hasAdrenaline[i]=false;
@@ -51,7 +54,13 @@ public void OnPluginStart()
   HookEvent("infected_hurt", hurt_zombie);
 }
 
-public void on_cooldown_change(Handle convar,const char[] oldValue,const char[] newValue)
+public void on_stagger_change(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+  //FindConVar(.SetBool(strcmp(newValue, "true") == 0);
+  convar.SetBool(strcmp(newValue, "true") == 0);
+}
+
+public void on_cooldown_change(Handle convar, const char[] oldValue, const char[] newValue)
 {
   float new_cooldown=StringToFloat(newValue);
   if(new_cooldown>0 && new_cooldown < 3600)
@@ -116,8 +125,16 @@ public void hurt_zombie(Handle event,const char[] name, bool dontBroadcast)
             WABPrintToServerDebug("damageType: %d", damageType);
             float damageVec[3]= {0.0,0.0,0.0};
             float witchPosition[3]={0.0,0.0,0.0};
-            //if (
-            SDKHooks_TakeDamage(victim,attacker_client,attacker_client,999999.0,DMG_SLASH,weapon,damageVec,witchPosition);
+            if (FindConVar(STAGGER_CONVAR).BoolValue)
+            {
+              float pos[3];
+              GetClientAbsOrigin(attacker_client, pos);
+              RunScriptCode("GetPlayerFromUserID(%d).Stagger(Vector(%.3f, %.3f, %.3f))", GetClientUserId(victim), pos[0], pos[1], pos[2]);
+            }
+            else
+            {
+              SDKHooks_TakeDamage(victim, attacker_client, attacker_client, 999999.0, DMG_SLASH, weapon, damageVec, witchPosition);
+            }
             hasAdrenaline[attacker_client]=false;
             WABPrintToServerDebug("DEACTIVATED BOOST");
           }
@@ -174,7 +191,7 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
   if(hasAdrenaline[this_client])
   {
     hasAdrenaline[this_client]=false;
-    PrintToChat(this_client,"%sYour adrenaline boost has been deactivated!",prepend);
+    PrintToChat(this_client, "%sYour adrenaline boost has been deactivated!", PREPEND);
   }
   WABPrintToServerDebug("adrenaline boost deactivated: %d", this_client);
   if(this_client==0)
@@ -182,5 +199,18 @@ public Action disableAdrenalineBoost(Handle timer,any serial)
     return Plugin_Stop;
   }
   return Plugin_Handled;
+}
+
+stock void RunScriptCode(const char[] fmt, any ...) {
+  char buffer[512];
+  VFormat(buffer, sizeof(buffer), fmt, 2);
+
+  int ent = CreateEntityByName("logic_script");
+  DispatchSpawn(ent);
+
+  SetVariantString(buffer);
+  AcceptEntityInput(ent, "RunScriptCode");
+
+  RemoveEntity(ent);
 }
 
